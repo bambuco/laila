@@ -1,0 +1,23 @@
+#lailacontrol_board,
+.toolbar,
+.toolbars_box,
+.description p {
+    display: none;
+}
+
+body {
+    background: white;
+    font-size: 12pt;
+}
+
+.data_summary th {
+    border: 1px solid #000;
+    color: #000;
+    background-color: #fff;
+}
+
+.to_print {
+    display: inline;
+    text-align: right;
+    font-style: italic;
+}

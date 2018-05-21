@@ -1,0 +1,434 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Laila editor</title>
+    <link rel="stylesheet" type="text/css" href="jquery/css/pepper-grinder/jquery-ui-1.9.0.custom.min.css" media="all" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <script type="text/javascript" src="jquery/js/jquery-1.8.2.js"></script>
+    <script type="text/javascript" src="jquery/js/jquery-ui-1.9.0.custom.min.js"></script>
+
+    <!--Colorpicker jquery complement-->
+    <script type="text/javascript" src="jquery/colorpicker/jquery.ui.colorPicker.min.js"></script>
+    <link rel="stylesheet" href="jquery/colorpicker/css/jquery.ui.colorPicker.css">
+    <!--End of colorpicker jquery complement-->
+
+    <link rel="stylesheet" href="css/style.css" media="all" />
+    <link rel="stylesheet" href="css/print.css" media="print" />
+    <script type="text/javascript" src="js/custom.laila.js"></script>
+
+    <script type="text/javascript" src="lang/es.js"></script>
+    <script type="text/javascript" src="lang/en.js"></script>
+
+    <script type="text/javascript">
+        var board;
+        $(function() {
+
+            translate_page (true);
+
+            $( "#print_summary" ).button({text: true, icons: {primary: "ui-icon-print"}})
+                .click(function () {
+                    $('#print_window').dialog({'modal': true, 'title': _ll('print'), 'buttons': { 'ok': function () {
+                        $(this).dialog('close');
+                        window.print();
+                    }}});
+            });
+
+            $( "#save_target" ).button({text: true, icons: {primary: "ui-icon-disk"}})
+                .click(function(){
+                    var data = board.laila('getTargetCanvas').toDataURL("image/png").replace("image/png", "image/octet-stream");
+                    window.location.href = data;
+            });
+
+            $( "#language" ).button({icons: false})
+                .click(function () {
+                    if ($("#language").attr('checked')) {
+                        $(".language_flag").addClass('icon-english');
+                        $(".language_flag").removeClass('icon-spanish');
+                        laila_strings_lang = 'en';
+                    }
+                    else {
+                        $(".language_flag").removeClass('icon-english');
+                        $(".language_flag").addClass('icon-spanish');
+                        laila_strings_lang = 'es';
+                    }
+
+                    translate_page ();
+            });
+
+            $( "#scale" ).buttonset();
+            $( "#scalex" ).button({text: false, icons: {primary: "ui-icon-arrowthickstop-1-e" }});
+            $( "#scaley" ).button({text: false, icons: {primary: "ui-icon-arrowthickstop-1-s" }});
+
+
+            $( "#grid" ).buttonset();
+            $( "#gridsource" ).button({text: false, icons: {primary: "ui-icon-calculator"}});
+            $( "#gridtarget" ).button({text: false, icons: {primary: "ui-icon-calculator"}});
+
+            $( "#repaint" ).button({text: true, icons: {primary: "ui-icon-arrowrefresh-1-s"}})
+            .click(function(){
+
+                board.laila(getControlProperties());
+                board.laila('repaint', print_colorlist);
+            });
+
+            $( "#width" ).spinner();
+            $( "#height" ).spinner();
+            $( "#factor" ).spinner();
+
+            $( "#line_weight" ).spinner({step: 0.1, numberFormat: "n"});
+            $( "#line_color" ).button({text: false})
+            .click(function(){
+
+                $('#color_picker').colorPicker({
+                    format: 'hex',
+                    colorChange: function(e, ui) {
+                        $( "#color_picker_window" ).css( "background-color", ui.color );
+                    }
+                });
+
+                $( "#color_picker_window" ).dialog( "option", "buttons", { 'ok': function() {
+                        $( "#line_color" ).val($( "#color_picker_window" ).css( "background-color"));
+                        $( "#line_color" ).css('background-color', $( "#color_picker_window" ).css( "background-color"));
+                        $( this ).dialog( "close" );
+                    }});
+                $( "#color_picker_window" ).dialog( "open" );
+            });
+
+            $( "#line_color" ).css('background-color', $( "#line_color" ).val());
+
+            $( "#color_picker_window" ).dialog({
+                title: _ll('color_picker'),
+                autoOpen: false,
+                height: 440,
+                width: 330,
+                modal: true
+            });
+
+            $( "#automatic_color" ).button({text: false, icons: {primary: "ui-icon-gear"}})
+                .click(function () {
+                    if ($("#automatic_color").attr('checked')) {
+                        $('#automatic_palette_type_label').html(_ll('number_colors'));
+                        $('#reduce_factor').attr('title', _ll('number_colors'));
+                    }
+                    else {
+                        $('#automatic_palette_type_label').html(_ll('reduction_factor'));
+                        $('#reduce_factor').attr('title', _ll('reduction_factor'));
+                    }
+                });
+            $( "#reduce_factor" ).spinner();
+
+            $( "#palette" ).buttonset()
+                .click(function(e, ui) {
+                    $("#sample_color").attr('checked', false);
+                    $("#sample_color").button('refresh');
+
+                    if ($("#custom_palette").attr('checked')) {
+                        $('#custom_palette_toolbar').show();
+                    }
+                    else {
+                        $('#custom_palette_toolbar').hide();
+                        board.laila('executeSampleColor', false);
+                    }
+
+                    if ($("#normal_colors").attr('checked') || $("#gray_scale").attr('checked')) {
+                        $('#automatic_palette_toolbar').show();
+                    }
+                    else {
+                        $('#automatic_palette_toolbar').hide();
+                    }
+            });
+
+            $( "#normal_colors" ).button({text: false, icons: {primary: "ui-icon-lightbulb"}});
+            $( "#gray_scale" ).button({text: false, icons: {primary: "ui-icon-bookmark"}});
+            $( "#custom_palette" ).button({text: false, icons: {primary: "ui-icon-clock"}});
+
+            $( "#add_color" ).button({text: false, icons: {primary: "ui-icon-plus"}})
+                .click(function(){
+
+                    $('#color_picker').colorPicker({
+                        format: 'hex',
+                        colorChange: function(e, ui) {
+                            $( "#color_picker_window" ).css( "background-color", ui.color );
+                        }
+                    });
+
+                    $( "#color_picker_window" ).dialog( "option", "buttons", { 'ok': function() {
+                        var color = $( "#color_picker_window" ).css( "background-color");
+                        var new_color = $('<button class="new_color" style="background-image: none; background-color: ' + color + '" value="' + color + '">&nbsp;</button>').appendTo($('#palette_container'));
+                        new_color.button().click(function() { $( this ).remove(); });
+                        $( this ).dialog( "close" );
+                    }});
+                    $( "#color_picker_window" ).dialog( "open" );
+            });
+
+            $( "#sample_color" ).button({text: false, icons: {primary: "ui-icon-tag"}})
+                .click(function(){
+
+                    if ($("#sample_color").attr('checked')) {
+                        $('#' + board.laila('option', 'id') + '_board').show();
+                        board.laila('executeSampleColor', function(color) {
+                            var new_color = $('<button class="new_color" style="background-image: none; background-color: ' + color.rgb + '" value="' + color.rgb + '">&nbsp;</button>').appendTo($('#palette_container'));
+                            new_color.button().click(function() { $( this ).remove(); });
+                        });
+                    }
+                    else {
+                        $('#' + board.laila('option', 'id') + '_board').hide();
+                        board.laila('executeSampleColor', false);
+                    }
+            });
+
+            $( "#custom_palette_sort" ).buttonset();
+            $( "#custom_palette_sorted" ).button({text: false, icons: {primary: "ui-icon-radio-off"}});
+            $( "#custom_palette_position" ).button({text: false, icons: {primary: "ui-icon-bullet"}});
+            $( "#custom_palette_proximity" ).button({text: false, icons: {primary: "ui-icon-radio-on"}});
+
+            $( "#symbols" ).button({text: false, icons: {primary: "ui-icon-notice"}});
+
+            //Initial configuration
+            $("#sample_color").attr('checked', false);
+
+            //Show/hide toolbar according to current state
+            if ($("#custom_palette").attr('checked')) {
+                $('#custom_palette_toolbar').show();
+            }
+            else {
+                $('#custom_palette_toolbar').hide();
+            }
+
+            if ($("#normal_colors").attr('checked') || $("#gray_scale").attr('checked')) {
+                $('#automatic_palette_toolbar').show();
+            }
+            else {
+                $('#automatic_palette_toolbar').hide();
+            }
+
+            //Add tooltip in all toolbar buttons
+            $( '.toolbars' ).tooltip({
+                position: { my: "left top", at: "left bottom" },
+                show: { duration: "fast" },
+                hide: { effect: "hide" }
+            });
+
+            var properties = getControlProperties();
+            properties.image = 'laila2.png';
+            board = $( "#laila" ).laila(properties);
+            board.laila('paint', print_colorlist);
+
+            $('#source_file').bind('change', handleFileSelect);
+
+        });
+
+        function getControlProperties () {
+            var properties = {};
+
+            properties.scale_image          = $("#scalex").attr('checked') ? $("#scaley").attr('checked') ? 'xy' : 'x' : $("#scaley").attr('checked') ? 'y' : 'none';
+            properties.grid_source          = $("#gridsource").attr('checked');
+            properties.grid_target          = $("#gridtarget").attr('checked');
+            properties.width                = parseFloat($("#width").val());
+            properties.height               = parseFloat($("#height").val());
+            properties.factor               = parseFloat($("#factor").val());
+            properties.line_color           = $( "#line_color" ).val();
+            properties.line_weight          = parseFloat($( "#line_weight" ).val());
+            properties.automatic_color      = $("#automatic_color").attr('checked');
+            properties.reduce_factor        = parseFloat($("#reduce_factor").val());
+            properties.palette              = $("#gray_scale").attr('checked') ? 'gray' : $("#custom_palette").attr('checked') ? 'custom' : 'default';
+            properties.symbols              = $("#symbols").attr('checked');
+            properties.custom_palette       = [];
+
+            if (properties.palette == 'custom') {
+                $('.new_color').each(function (index) {
+                    var color = $(this).val();
+                    colors = color.replace('rgb(', '').replace(')', '').split(',');
+
+                    properties.custom_palette[index] = {'r': parseFloat(colors[0]), 'g': parseFloat(colors[1]), 'b': parseFloat(colors[2]), 'rgb': color};
+
+                });
+
+                properties.custom_palette_sort = $("#custom_palette_sorted").attr('checked') ? 'sorted' : $("#custom_palette_position").attr('checked') ? 'position' : 'proximity';
+            }
+
+
+            return properties;
+        }
+
+        function handleFileSelect(e) {
+
+            var reader = new FileReader;
+
+            reader.onload = function(event) {
+                var img = new Image();
+                img.src = event.target.result;
+
+                img.onload = function() {
+                    var properties = getControlProperties();
+                    properties.image = this.src;
+                    board.laila(properties);
+                    board.laila('repaint', print_colorlist);
+                };
+            };
+
+            reader.readAsDataURL(e.target.files[0]);
+        }
+
+        function print_colorlist() {
+            var colors = board.laila('getDataSummary');
+            var properties = getControlProperties();
+
+            var colorlist = '<table class="data_summary"><tr><th>#</th><th>' + _ll('color') + '</th><th>' + _ll('symbol') + '</th><th>' + _ll('times') + '</th><th>%</th><th>' + _ll('rgb') + '</th></tr>';
+            var count = 0; //Because in some cases, the colors keys are names
+            var percent, symbol_label;
+            for (var k in colors) {
+                colorlist += '<tr>';
+                colorlist += '<td class="numeric_cell">' + (count + 1) + '</td>';
+                colorlist += '<td class="color_cell"><div style="background-color: ' + colors[k].rgb + '; color: ' + colors[k].rgb + ';">███████</div></td>';
+                colorlist += '<td class="symbol_label"> ' + colors[k].symbol + '</td>';
+                colorlist += '<td class="numeric_cell">' + colors[k].counter + '</td>';
+                colorlist += '<td class="numeric_cell">' + colors[k].percent + '</td>';
+                colorlist += '<td>' + colors[k].rgb + '</td>';
+                colorlist += '</tr>';
+                count++;
+            }
+            colorlist += '</table>';
+
+            $('#colorlist').html(colorlist);
+
+        }
+
+        function translate_page (first) {
+            //translate
+            $('.ll_translate_p').each(function (index) {
+                var obj = $(this);
+                obj.text(_ll(obj.attr('lls')));
+            });
+            $('.ll_translate_t').each(function (index) {
+                var obj = $(this);
+                obj.attr('title', _ll(obj.attr('lls')));
+            });
+
+            if (!first) {
+                $( "#color_picker_window" ).dialog('option', 'title', _ll('color_picker'));
+            }
+        }
+
+    </script>
+
+</head>
+<body>
+    <div class="description">
+        <div class="logo"><img src="css/Logo_laila_200.png" width="200" height="200" alt="Laila Logo">
+            <p class="txt">
+                <em>Laila</em> es un editor de imágenes que permite construir mapas para el bordado utilizando "<a href="https://es.wikipedia.org/wiki/Punto_de_cruz" target="_blank">Punto de cruz</a>". Con <em>Laila</em>, es posible llevar cualquier imagen a un diseño que se pueda construir con el bordado, ajustando la cantidad de colores a utilizar, el detalle definido por la cantidad de puntos y las dimensiones deseadas, e incluso hacer transformaciones a colores específicos.
+            </p>
+            <p class="txt">
+                Para utilizar el editor simplemente cargue una imagen, ajuste las diferentes opciones según lo que desee obtener y presione el botón "Pintar" para visualizar el resultado. Al finalizar, puede descargar la imagen resultante o imprimirla junto con la información de los colores necesarios para iniciar con la labor. Si utiliza la opción "Colores a símbolos" (el botón con el icono "!"), podrá ver la imagen con una referencia a los colores, mediante un símbolo que le indicará qué color utilizar en cada caso. No olvide presionar el botón "Pintar" después de seleccionar la opción.
+            </p>
+            <p class="txt">
+                <em>Laila</em> es una herramienta libre, puesta a disposición de aquellas personas que quieran realizar un bordado de Punto de cruz con un alto nivel de personalización. Esperamos que le sea de utilidad y sea de su agrado.
+            </p>
+            <p class="txt">
+                Cualquier opinión, sugerencia o duda, es bienvenida al correo <strong>info@bambuco.co</strong>, también, si realiza algún trabajo a partir de <em>Laila</em>, por favor comparta una foto con nosotros.
+            </p>
+        </div>
+        <br class="clear" />
+    </div>
+    <div class="toolbars_box">
+        <div id="action_toolbar" class="ui-widget-header ui-corner-all toolbars" >
+            <button id="print_summary" class="ll_translate_t" lls="print"><span class="ll_translate_p" lls="print"></span></button>
+            <button id="save_target" class="ll_translate_t" lls="save_image_result"><span class="ll_translate_p" lls="save_image_result" ></span></button>
+            <input type="checkbox" id="language" /><label for="language" class="ll_translate_t" lls="language"><span class="language_flag icon-spanish" ></span></label>
+        </div>
+
+        <div id="file_toolbar" class="ui-widget-header ui-corner-all toolbars" style="padding: 9px;">
+            <span class="ll_translate_p" lls="title_image" ></span><input type="file" id="source_file" name="source_file" multiple />
+        </div>
+
+        <div id="toolbar" class="ui-widget-header ui-corner-all toolbars">
+            <span class="ll_translate_p" lls="title_size" ></span>
+            <input id="width" size="3" value="800" class="ll_translate_t" lls="image_width" /> X 
+            <input id="height" size="3" value="600" class="ll_translate_t" lls="image_height" /><i>px</i>
+
+            <span id="scale">
+                <input type="checkbox" id="scalex" /><label for="scalex" class="ll_translate_t" lls="to_scale_x"><span class="ll_translate_p" lls="to_scale_x" ></span></label>
+                <input type="checkbox" id="scaley" /><label for="scaley" class="ll_translate_t" lls="to_scale_y"><span class="ll_translate_p" lls="to_scale_y" ></span></label>
+            </span>
+            
+            <span class="toolbar_separator">|</span>
+            <span class="ll_translate_p" lls="title_grid" ></span>
+            <input id="factor" size="2" value="10" class="ll_translate_t" lls="cell_size" /><i>px</i>
+            <span id="grid">
+                <input type="checkbox" id="gridsource" /><label for="gridsource" class="ll_translate_t" lls="grid_source"><span class="ll_translate_p" lls="grid_source" ></span></label>
+                <input type="checkbox" id="gridtarget" checked="checked" /><label for="gridtarget" class="ll_translate_t" lls="grid_target"><span class="ll_translate_p" lls="grid_target" ></span></label>
+            </span>
+
+            <span class="ll_translate_p" lls="title_line" ></span>
+            <button id="line_color" class="ll_translate_t" lls="line_color" style="background-image: none;" value="#7e7e7e">&nbsp;</button>
+            <input id="line_weight" size="2" value="0.1" class="ll_translate_t" lls="line_weight" /><i>px</i>
+            
+            <span class="toolbar_separator">|</span>
+            <span class="ll_translate_p" lls="title_colors" ></span>
+            <span id="palette">
+                <input type="radio" id="normal_colors" name="palette" checked="checked" /><label for="normal_colors" class="ll_translate_t" lls="original_colors"><span class="ll_translate_p" lls="original_colors" ></span></label>
+                <input type="radio" id="gray_scale" name="palette" /><label for="gray_scale" class="ll_translate_t" lls="gray_scale"><span class="ll_translate_p" lls="gray_scale" ></span></label>
+                <input type="radio" id="custom_palette" name="palette" /><label for="custom_palette" class="ll_translate_t" lls="custom_palette"><span class="ll_translate_p" lls="custom_palette" ></span></label>
+            </span>
+            
+            <input type="checkbox" id="symbols" /><label for="symbols" class="ll_translate_t" lls="colors_to_symbols"><span class="ll_translate_p" lls="colors_to_symbols" ></span></label>
+
+            <span class="toolbar_separator">|</span>
+
+            <button id="repaint" class="ll_translate_t" lls="title_paint"><span class="ll_translate_p" lls="title_paint" ></span></button>
+        </div>
+        
+        
+        <div id="custom_palette_toolbar" class="ui-widget-header ui-corner-all toolbars" >
+            <span class="ll_translate_p" lls="title_palette" ></span>
+
+            <span id="custom_palette_sort">
+                <input type="radio" id="custom_palette_sorted" name="custom_palette_sort" /><label for="custom_palette_sorted" class="ll_translate_t" lls="sorted_color"><span class="ll_translate_p" lls="sorted_color" ></span></label>
+                <input type="radio" id="custom_palette_position" name="custom_palette_sort" /><label for="custom_palette_position" class="ll_translate_t" lls="color_position"><span class="ll_translate_p" lls="color_position" ></span></label>
+                <input type="radio" id="custom_palette_proximity" name="custom_palette_sort" checked="checked" /><label for="custom_palette_proximity" class="ll_translate_t" lls="proximity_color"><span class="ll_translate_p" lls="proximity_color" ></span></label>
+            </span>
+            <span id="palette_container"></span>
+            <button id="add_color" class="ll_translate_t" lls="add_color"><span class="ll_translate_p" lls="add_color" ></span></button>
+            <input type="checkbox" id="sample_color" /><label for="sample_color" class="ll_translate_t" lls="take_sample_color"><span class="ll_translate_p" lls="take_sample_color" ></span></label>
+        </div>
+        
+        <div id="automatic_palette_toolbar" class="ui-widget-header ui-corner-all toolbars" >
+            <span class="ll_translate_p" lls="title_automatic_palette" ></span>
+            <input type="checkbox" id="automatic_color" /><label for="automatic_color" class="ll_translate_t" lls="calculate_automatic_color"><span class="ll_translate_p" lls="calculate_automatic_color" ></span></label>
+            <span id="automatic_palette_type_label"><span class="ll_translate_p" lls="reduction_factor" ></span></span>
+            <input id="reduce_factor" size="2" value="20" class="ll_translate_t" lls="reduction_factor" /><i>px</i>
+        </div>
+    </div>
+
+    <br class="break_line" />
+
+    <div id="laila"></div>
+    
+    <br class="break_line" />
+
+    <div id="colorlist"></div>
+    <p class="to_print"><span class="ll_translate_p" lls="credit_print" ></span></p>
+    
+<!--Hide controls-->
+<span style="display:none">
+    <div id="color_picker_window"><input type="text" id="color_picker" /></div>
+    <div id="print_window">
+        <p class="ui-state-highlight ui-corner-all" style="padding: 10px;"><span class="ui-icon ui-icon-info" style="float: left; margin: 0 7px 50px 0;"></span><span class="ll_translate_p" lls="print_background_message" ></span></p>
+    </div>
+</span>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-21336007-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+</body>
+</html>
