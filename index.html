@@ -300,7 +300,7 @@
             //translate
             $('.ll_translate_p').each(function (index) {
                 var obj = $(this);
-                obj.text(_ll(obj.attr('lls')));
+                obj.html(_ll(obj.attr('lls')));
             });
             $('.ll_translate_t').each(function (index) {
                 var obj = $(this);
@@ -318,18 +318,7 @@
 <body>
     <div class="description">
         <div class="logo"><img src="css/Logo_laila_200.png" width="200" height="200" alt="Laila Logo">
-            <p class="txt">
-                <em>Laila</em> es un editor de imágenes que permite construir mapas para el bordado utilizando "<a href="https://es.wikipedia.org/wiki/Punto_de_cruz" target="_blank">Punto de cruz</a>". Con <em>Laila</em>, es posible llevar cualquier imagen a un diseño que se pueda construir con el bordado, ajustando la cantidad de colores a utilizar, el detalle definido por la cantidad de puntos y las dimensiones deseadas, e incluso hacer transformaciones a colores específicos.
-            </p>
-            <p class="txt">
-                Para utilizar el editor simplemente cargue una imagen, ajuste las diferentes opciones según lo que desee obtener y presione el botón "Pintar" para visualizar el resultado. Al finalizar, puede descargar la imagen resultante o imprimirla junto con la información de los colores necesarios para iniciar con la labor. Si utiliza la opción "Colores a símbolos" (el botón con el icono "!"), podrá ver la imagen con una referencia a los colores, mediante un símbolo que le indicará qué color utilizar en cada caso. No olvide presionar el botón "Pintar" después de seleccionar la opción.
-            </p>
-            <p class="txt">
-                <em>Laila</em> es una herramienta libre, puesta a disposición de aquellas personas que quieran realizar un bordado de Punto de cruz con un alto nivel de personalización. Esperamos que le sea de utilidad y sea de su agrado.
-            </p>
-            <p class="txt">
-                Cualquier opinión, sugerencia o duda, es bienvenida al correo <strong>info@bambuco.co</strong>, también, si realiza algún trabajo a partir de <em>Laila</em>, por favor comparta una foto con nosotros.
-            </p>
+            <div class="ll_translate_p" lls="page_description" ></div>
         </div>
         <br class="clear" />
     </div>
